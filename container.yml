@@ -1,0 +1,57 @@
+version: "2"
+settings:
+
+  conductor:
+    base: centos:7
+    volumes:
+      - temp-space:/tmp    # temp space for static files
+    # roles_path:   # Specify a local path containing Ansible roles
+    # volumes:      # Provide a list of volumes to mount
+    # environment:  # List or mapping of environment variables
+
+  # Set the name of the project. Defaults to basename of the project directory.
+  # For built services, concatenated with service name to form the built image name.
+  project_name: guac
+
+defaults:
+  POSTGRES_USER: guacamole
+  POSTGRES_PASSWORD: limejuice
+  POSTGRES_DB: guacamole_db
+  GUAC_PORT: 8443
+
+services:
+  # Add your containers here, specifying the base image you want to build from.
+
+    guac:
+      from: "guacamole/guacd:latest"
+      expose:
+        - '{{ GUAC_PORT }}'
+      links:
+        - postgresql
+      dev_overrides:
+        depends_on:
+          - postgresql
+
+    postgresql:
+      from: ansible/postgresql:latest
+      environment:
+        - 'POSTGRES_DB={{ POSTGRES_DB }}'
+        - 'POSTGRES_USER={{ POSTGRES_USER }}'
+        - 'POSTGRES_PASS={{ POSTGRES_PASSWORD }}'
+        - 'PGDATA=/var/lib/pgsql/data/userdata'
+      expose:
+        - 5432
+
+  # web:
+  #   from: "centos:7"
+  #   ports:
+  #     - "80:80"
+  #   command: ["/usr/bin/dumb-init", "/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
+  #   dev_overrides:
+  #     environment:
+  #       - "DEBUG=1"
+registries: {}
+  # Add optional registries used for deployment. For example:
+  #  google:
+  #    url: https://gcr.io
+  #    namespace: my-cool-project-xxxxxx
